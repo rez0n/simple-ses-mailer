@@ -86,7 +86,7 @@ class SesEmailMessage:
                 if not os.path.isfile(file_path):
                     raise TypeError(f'Embedded attachment file "{file_path}" is not accessible')
 
-                filename = file_path.split('/')[-1:]
+                filename = file_path.split('/')[-1:][0]
                 with open(file_path, "rb") as attachment:
                     part = MIMEImage(attachment.read())
                     part.add_header('Content-ID', f'<{filename}>')

@@ -8,7 +8,7 @@ setuptools.setup(
     name='simple-ses-mailer',
     version='0.0.1',
     keywords='aws, ses, mail',
-    author=u'Denis Verbin <den.verbin@gmail.com',
+    author=u'Denis Verbin <den.verbin@gmail.com>',
     packages=['simple_ses_mailer'],
     url='https://github.com/rez0n/simple-ses-mailer',
     license='Apache licence, see LICENCE',

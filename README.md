@@ -2,6 +2,12 @@
 Simple Python mailer for AWS SES
 
 
+## Installation
+
+```
+pip install simple-ses-mailer
+```
+
 ## Example Usage
 ```python
 from simple_ses_mailer.mailers import SesEmailMessage
