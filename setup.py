@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name='simple-ses-mailer',
-    version='0.0.1',
+    version='0.0.4',
     keywords='aws, ses, mail',
     author=u'Denis Verbin <den.verbin@gmail.com>',
     packages=['simple_ses_mailer'],
