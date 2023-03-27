@@ -15,7 +15,7 @@ setuptools.setup(
     description='',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    requires=[
+    install_requires=[
         'boto3',
     ],
     classifiers=[

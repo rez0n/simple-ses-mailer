@@ -13,28 +13,28 @@ class SesEmailMessage:
     region_name = None
 
     mail_from = None
-    embedded_attachments_list = None
+    mail_to = None
+    embedded_attachments_list = []
 
     access_key_names = ['AWS_SES_ACCESS_KEY_ID', 'AWS_ACCESS_KEY_ID']
     secret_key_names = ['AWS_SES_SECRET_ACCESS_KEY', 'AWS_SECRET_ACCESS_KEY']
     region_name_names = ['AWS_SES_REGION_NAME', 'AWS_REGION_NAME']
 
-    def __init__(self, subject, body_html, mail_to, mail_from: str = '', embedded_attachments_list: list = None):
+    def __init__(self, subject=None, body_html=None, mail_to=None, mail_from: str = '',
+                 embedded_attachments_list: list = None):
         self.access_key, self.secret_key = self._get_access_keys()
         self.region_name = self._get_region_name()
         self.mail_from = self._get_mail_from(mail_from)
 
-        self.embedded_attachments_list = embedded_attachments_list or self.embedded_attachments_list
+        self.mail_to = mail_to
+        if mail_from:
+            self.mail_from = mail_from
 
-        self._mail_to_list = self._normalize_recipients(mail_to)
+        self.subject = subject
+        self.body_html = body_html
 
-        self._message = self._get_message_object(
-            subject=subject,
-            body_html=body_html,
-            mail_to=self._mail_to_list,
-        )
-
-        self._message = self.attach_embedded_images()
+        if embedded_attachments_list:
+            self.embedded_attachments_list += embedded_attachments_list
 
     def _get_access_keys(self):
         access_key = self.access_key or lookup_env(self.access_key_names)
@@ -58,28 +58,32 @@ class SesEmailMessage:
     def _get_mail_from(mail_from):
         return mail_from or lookup_env(['MAIL_FROM'])
 
-    @staticmethod
-    def _normalize_recipients(mail_to):
-        if not isinstance(mail_to, list):
-            mail_to = [mail_to, ]
+    def _get_recipients(self):
+        _mail_to = self.mail_to
+        if not _mail_to:
+            raise TypeError(f'mail_to required')
+        if not isinstance(_mail_to, list):
+            _mail_to = [_mail_to, ]
+        return _mail_to
+
+    def _get_mail_to_string(self) -> str:
+
+        mail_to = ','.join(self._get_recipients())
         return mail_to
 
-    @staticmethod
-    def _get_mail_to_string(mail_to) -> str:
-        mail_to = ','.join(mail_to)
-        return mail_to
+    def _get_message_object(self):
+        self._message = MIMEMultipart()
+        self._message["Subject"] = self.subject
+        self._message["To"] = self._get_mail_to_string()
 
-    def _get_message_object(self, subject, body_html, mail_to):
-        msg = MIMEMultipart()
-        msg["Subject"] = subject
-        msg["To"] = self._get_mail_to_string(mail_to)
-        if body_html:
-            body = MIMEText(body_html, 'html')
-            msg.attach(body)
-        return msg
+        if self.body_html:
+            body = MIMEText(self.body_html, 'html')
+            self._message.attach(body)
+
+        self._message = self.attach_embedded_images()
+        return self._message
 
     def attach_embedded_images(self):
-        message = self._message
         if self.embedded_attachments_list:
             for file_path in self.embedded_attachments_list:
 
@@ -90,13 +94,16 @@ class SesEmailMessage:
                 with open(file_path, "rb") as attachment:
                     part = MIMEImage(attachment.read())
                     part.add_header('Content-ID', f'<{filename}>')
-                message.attach(part)
-        return message
+                self._message.attach(part)
+        return self._message
 
     def send(self):
+        message = self._get_message_object()
+        mail_to = self._get_recipients()
+
         ses_client = self._get_ses_client()
         ses_client.send_raw_email(
             Source=self.mail_from,
-            Destinations=self._mail_to_list,
-            RawMessage={"Data": self._message.as_string()}
+            Destinations=mail_to,
+            RawMessage={"Data": message.as_string()}
         )
