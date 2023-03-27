@@ -19,6 +19,6 @@ setuptools.setup(
         'boto3',
     ],
     classifiers=[
-        'Topic :: Mail',
+        'Topic :: Communications :: Email',
     ]
 )
