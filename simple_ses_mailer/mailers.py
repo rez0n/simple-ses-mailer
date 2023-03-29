@@ -16,6 +16,7 @@ class SesEmailMessage:
     mail_to = None
     embedded_attachments_list = []
 
+    # Possible environment variable names for searching
     access_key_names = ['AWS_SES_ACCESS_KEY_ID', 'AWS_ACCESS_KEY_ID']
     secret_key_names = ['AWS_SES_SECRET_ACCESS_KEY', 'AWS_SECRET_ACCESS_KEY']
     region_name_names = ['AWS_SES_REGION_NAME', 'AWS_REGION_NAME']
@@ -37,15 +38,27 @@ class SesEmailMessage:
             self.embedded_attachments_list += embedded_attachments_list
 
     def _get_access_keys(self):
+        """
+        Use class instance values otherwise try to get keys from environment variables
+        :return: Two values, AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+        """
         access_key = self.access_key or lookup_env(self.access_key_names)
         secret_key = self.secret_key or lookup_env(self.secret_key_names)
         return access_key, secret_key
 
     def _get_region_name(self):
+        """
+        Use class instance values otherwise try to get keys from environment variables
+        :return: AWS region name
+        """
         region_name = self.region_name or lookup_env(self.region_name_names)
         return region_name
 
     def _get_ses_client(self):
+        """
+        Initialization of the boto3 client
+        :return:
+        """
         ses_client = boto3.client(
             "ses",
             aws_access_key_id=self.access_key,
@@ -56,9 +69,18 @@ class SesEmailMessage:
 
     @staticmethod
     def _get_mail_from(mail_from):
+        """
+        Use class instance 'mail_from', otherwise get value from environment
+        :param mail_from:
+        :return:
+        """
         return mail_from or lookup_env(['MAIL_FROM'])
 
     def _get_recipients(self):
+        """
+        Check and convert recipients list to list datatype
+        :return:
+        """
         _mail_to = self.mail_to
         if not _mail_to:
             raise TypeError(f'mail_to required')
@@ -67,11 +89,18 @@ class SesEmailMessage:
         return _mail_to
 
     def _get_mail_to_string(self) -> str:
-
+        """
+        Get comma separated string from recipients list, required for MIMEMultipart[To]
+        :return:
+        """
         mail_to = ','.join(self._get_recipients())
         return mail_to
 
     def _get_message_object(self):
+        """
+        Create message object using MIMEMultipart
+        :return:
+        """
         self._message = MIMEMultipart()
         self._message["Subject"] = self.subject
         self._message["To"] = self._get_mail_to_string()
@@ -84,6 +113,10 @@ class SesEmailMessage:
         return self._message
 
     def attach_embedded_images(self):
+        """
+        Attach embedded images to message and set it's 'Content-ID' to make usable in template
+        :return:
+        """
         if self.embedded_attachments_list:
             for file_path in self.embedded_attachments_list:
 
